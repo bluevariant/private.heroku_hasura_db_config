@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const ngrok = require("ngrok");
 const fs = require("fs-extra");
 const path = require("path");
