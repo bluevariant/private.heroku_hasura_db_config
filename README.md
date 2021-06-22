@@ -33,7 +33,7 @@ herokuhasuradbconfig
 or
 
 ```
-pm2 start "herokuhasuradbconfig"
+pm2 start "herokuhasuradbconfig" --name AutoHasuraDBConfig
 ```
 ## License
 
