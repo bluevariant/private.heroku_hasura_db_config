@@ -5,13 +5,16 @@ const fs = require("fs-extra");
 const path = require("path");
 const prompts = require("prompts");
 const { exec } = require("child_process");
+const publicIp = require("public-ip");
 
 const homedir = require("os").homedir();
 const configDir = path.join(homedir, ".private.heroku_hasura_db_config.config");
 const configFile = path.join(configDir, "config.json");
+const cacheIpFile = path.join(configDir, "ip.txt");
 
 async function main() {
   await fs.ensureFile(configFile);
+  await fs.ensureFile(cacheIpFile);
 
   if (process.argv.includes("config")) {
     const response = await prompts([
@@ -48,31 +51,38 @@ async function main() {
     return console.error("No config found!");
   }
 
-  const url = await ngrok.connect({ proto: "tcp", addr: 5432 });
-  const host = url.replace("tcp://", "");
-  const databaseUrl = [
-    "postgres://",
-    config["postgresUsername"],
-    ":",
-    config["postgresPassword"],
-    "@",
-    host,
-    "/",
-    config["postgresDatabase"],
-  ].join("");
+  const lastHost = await fs.readFile(cacheIpFile, "utf-8");
+  const host = (await publicIp.v4()) + ":5432";
 
-  exec(
-    `heroku config:set HASURA_GRAPHQL_DATABASE_URL=${databaseUrl} --app ${config["herokuApp"]}`,
-    (error, stdout, stderr) => {
-      console.log({
-        error,
-        stdout,
-        stderr,
-      });
+  if (lastHost !== host) {
+    const databaseUrl = [
+      "postgres://",
+      config["postgresUsername"],
+      ":",
+      config["postgresPassword"],
+      "@",
+      host,
+      "/",
+      config["postgresDatabase"],
+    ].join("");
 
-      if (error) process.exit(1);
-    }
-  );
+    exec(
+      `heroku config:set HASURA_GRAPHQL_DATABASE_URL=${databaseUrl} --app ${config["herokuApp"]}`,
+      (error, stdout, stderr) => {
+        console.log({
+          error,
+          stdout,
+          stderr,
+        });
+
+        if (error) process.exit(1);
+        else fs.writeFileSync(cacheIpFile, host);
+      }
+    );
+  }
+
+  await new Promise((rel) => setTimeout(rel, 10000));
+  await main();
 }
 
 main().catch(console.error);

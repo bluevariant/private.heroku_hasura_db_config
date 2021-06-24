@@ -16,7 +16,8 @@
   "dependencies": {
     "fs-extra": "^10.0.0",
     "ngrok": "^4.0.1",
-    "prompts": "^2.4.1"
+    "prompts": "^2.4.1",
+    "public-ip": "^4.0.4"
   },
   "bin": {
     "herokuhasuradbconfig": "index.js"
