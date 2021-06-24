@@ -67,7 +67,7 @@ async function main() {
     ].join("");
 
     exec(
-      `heroku config:set HASURA_GRAPHQL_DATABASE_URL=${databaseUrl} --app ${config["herokuApp"]}`,
+      `heroku config:set DATABASE_URL=${databaseUrl} --app ${config["herokuApp"]}`,
       (error, stdout, stderr) => {
         console.log({
           error,
@@ -76,7 +76,20 @@ async function main() {
         });
 
         if (error) process.exit(1);
-        else fs.writeFileSync(cacheIpFile, host);
+        else
+          exec(
+            `heroku config:set HASURA_GRAPHQL_DATABASE_URL=${databaseUrl} --app ${config["herokuApp"]}`,
+            (error, stdout, stderr) => {
+              console.log({
+                error,
+                stdout,
+                stderr,
+              });
+
+              if (error) process.exit(1);
+              else fs.writeFileSync(cacheIpFile, host);
+            }
+          );
       }
     );
   }
